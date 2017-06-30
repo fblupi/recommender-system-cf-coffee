@@ -43,6 +43,38 @@ class Ratings
   getRatings: -> @ratings
   getAverageRating: -> @averageRating
 
+class Recommender
+  constructor: (@ratings, @avgRatings, @myRatings) ->
+    @myAvgRating = 0.0
+    for k, v of @myRatings
+      @myAvgRating += (Number) v
+    @myAvgRating /= Object.keys(@myRatings).length
+
+  getNeighbourhoods: (num) ->
+    @neighbourhoods = {}
+    for user of @ratings
+      matches = []
+      for movie of @myRatings
+        if @ratings[user][movie] != undefined
+          matches.push movie
+      if matches.length > 0
+        num = 0.0
+        userDen = 0.0
+        otherUserDen = 0.0
+        for movie in matches
+          u = @myRatings[movie] - @myAvgRating
+          v = @ratings[user][movie] - @avgRatings[user]
+          num += u * v
+          userDen += u * u
+          otherUserDen += v * v
+        if userDen is 0 or otherUserDen is 0
+          matchRate = 0
+        else
+          matchRate = num / (Math.sqrt(userDen) * Math.sqrt(otherUserDen))
+      else
+        matchRate = 0
+      @neighbourhoods[user] = matchRate
+
 getRandomInt = (min, max) -> Math.floor(do Math.random * max) + min
 getRandomMovie = (numMovies) -> getRandomInt(1, numMovies)
 getRandomRating = -> getRandomInt(1, 5)
@@ -61,8 +93,11 @@ numMovies = do mlMovies.getNumMovies
 n = 0
 while n < NUM_RATINGS
   idMovie = getRandomMovie numMovies
-  while not myRatings[idMovie] is undefined
+  while myRatings[idMovie] != undefined
     idMovie = getRandomMovie numMovies
   rating = do getRandomRating
   myRatings[idMovie] = rating
   n++
+
+recommender = new Recommender mlRatings.getRatings(), mlRatings.getAverageRating(), myRatings
+recommender.getNeighbourhoods(NUM_NEIGHBOURHOODS)
