@@ -50,7 +50,7 @@ class Recommender
       @myAvgRating += (Number) v
     @myAvgRating /= Object.keys(@myRatings).length
 
-  getNeighbourhoods: (num) ->
+  getNeighbourhoods: (k) ->
     @neighbourhoods = {}
     for user of @ratings
       matches = []
@@ -74,6 +74,21 @@ class Recommender
       else
         matchRate = 0
       @neighbourhoods[user] = matchRate
+    tuples = []
+    for key of @neighbourhoods
+      tuples.push [
+        key 
+        @neighbourhoods[key]
+      ]
+    tuples.sort (a, b) ->
+      a = a[1]
+      b = b[1]
+      if a < b then 1 else if a > b then -1 else 0
+    @neighbourhoods = {}
+    i = 0
+    while i < k
+      @neighbourhoods[tuples[i][0]] = tuples[i][1]
+      i++
 
 getRandomInt = (min, max) -> Math.floor(do Math.random * max) + min
 getRandomMovie = (numMovies) -> getRandomInt(1, numMovies)
